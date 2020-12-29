@@ -6,10 +6,15 @@ import (
 )
 
 type EnvVariables struct {
-	PGUsername string
-	PGPassword string
-	PGHost     string
-	PGName     string
+	PGUsername    string
+	PGPassword    string
+	PGHost        string
+	PGName        string
+	AccessSecret  string
+	RedisPort     string
+	RedisHost     string
+	RedisPassword string
+	RefreshSecret string
 }
 
 func GetConfig() (EnvVariables, error) {

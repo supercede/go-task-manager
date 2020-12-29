@@ -53,3 +53,42 @@ func (s *Store) GetUserByUsername(username string) (*models.User, error) {
 
 	return &user, nil
 }
+
+func (s *Store) GetUserById(id uint) (*models.User, error) {
+	var user models.User
+	result := s.DB.First(&user, id)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return &user, nil
+}
+
+func (s *Store) CreateTask(u *models.User, t models.Task) (*models.Task, error) {
+	result := s.DB.Create(&t)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	if err := s.DB.Model(u).Association("Tasks").Append(&t).Error; err != nil {
+		return nil, err
+	}
+
+	return &t, nil
+}
+
+func (s *Store) GetTasks(u *models.User) (*[]models.Task, error) {
+	var tasks []models.Task
+	if err := s.DB.Model(u).Association("Tasks").Find(&tasks).Error; err != nil {
+		return nil, err
+	}
+	return &tasks, nil
+}
+
+func (s *Store) GetTask(u *models.User, id int) (*models.Task, error) {
+	var task models.Task
+	if err := s.DB.Model(u).Where("ID = ?", id).Association("Tasks").Find(&task).Error; err != nil {
+		return nil, err
+	}
+	return &task, nil
+}
