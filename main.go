@@ -64,12 +64,19 @@ func main() {
 	serveMux.HandleFunc("/signin", handler.Signin).Methods("POST")
 	serveMux.HandleFunc("/logout", handler.Logout).Methods("GET", "POST")
 	serveMux.HandleFunc("/tokens", handler.Refresh).Methods("POST")
-	// route.HandleFunc("/task", handler.CreateTask).Methods("POST")
+
 	tasksRouter := serveMux.PathPrefix("/tasks").Subrouter()
 	tasksRouter.Use(middleware.AuthMiddleware)
 	tasksRouter.HandleFunc("", handler.CreateTask).Methods("POST")
+	// GorillaMux doesn't handle query params well, I know
+	tasksRouter.HandleFunc("", handler.GetTasks).Queries("completed", "{completed:true|false}").Methods("GET")
+	tasksRouter.HandleFunc("", handler.GetTasks).Queries("priority", "{priority:[1-3]}").Methods("GET")
 	tasksRouter.HandleFunc("", handler.GetTasks).Methods("GET")
 	tasksRouter.HandleFunc("/{id:[0-9]+}", handler.GetTask).Methods("GET")
+	tasksRouter.HandleFunc("/{id:[0-9]+}", handler.UpdateTask).Methods(http.MethodPatch)
+	tasksRouter.HandleFunc("/{id:[0-9]+}", handler.DeleteTask).Methods(http.MethodDelete)
+	tasksRouter.HandleFunc("/{idTask:[0-9]+}/{idUser:[0-9]+}", handler.AddUserToTask).Methods(http.MethodPost)
+	tasksRouter.HandleFunc("/{idTask:[0-9]+}/{idUser:[0-9]+}", handler.RemoveUserFromTask).Methods(http.MethodDelete)
 
 	s := &http.Server{
 		Addr:         ":8080",

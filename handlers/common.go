@@ -18,8 +18,9 @@ type Handler struct {
 }
 
 type Response struct {
+	Status  string      `json:"status"`
 	Message string      `json:"message"`
-	Data    interface{} `json:"data"`
+	Data    interface{} `json:"data,omitempty"`
 }
 
 type KeyUser struct{}
@@ -69,5 +70,5 @@ func RespondJSON(w http.ResponseWriter, status int, payload interface{}) {
 
 // respondError makes the error response with payload as json format
 func RespondError(w http.ResponseWriter, code int, message string) {
-	RespondJSON(w, code, map[string]string{"error": message})
+	RespondJSON(w, code, map[string]string{"status": "error", "error": message})
 }

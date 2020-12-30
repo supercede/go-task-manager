@@ -2,12 +2,14 @@ package models
 
 import (
 	"database/sql/driver"
+	"encoding/json"
 	"time"
 
 	"github.com/jinzhu/gorm"
 )
 
 type priority string
+type password string
 
 const (
 	low  priority = "1"
@@ -25,7 +27,7 @@ func (p priority) Value() (driver.Value, error) {
 }
 
 type User struct {
-	ID        uint       `json:"-" gorm:"primary_key"`
+	ID        uint       `json:"id" gorm:"primary_key"`
 	CreatedAt time.Time  `json:"-"`
 	UpdatedAt time.Time  `json:"-"`
 	DeletedAt *time.Time `json:"-" sql:"index"`
@@ -35,16 +37,14 @@ type User struct {
 }
 
 // Avoid returning Password
-type returnedUser struct {
-	ID       uint   `json:"id"`
-	Username string `json:"username"`
-}
-
-func (u *User) ReturnUser() *returnedUser {
-	return &returnedUser{
-		Username: u.Username,
-		ID:       u.ID,
+func (u User) MarshalJSON() ([]byte, error) {
+	var tmp struct {
+		ID       uint   `json:"id"`
+		Username string `json:"username"`
 	}
+	tmp.Username = u.Username
+	tmp.ID = u.ID
+	return json.Marshal(&tmp)
 }
 
 type Task struct {
@@ -56,13 +56,10 @@ type Task struct {
 	// Priority  string `gorm:"type:ENUM(1', '2', '3');default:'1'" json:"priority"`
 	Priority  priority `sql:"type:priority" gorm:"default:'1'" json:"priority"`
 	Completed bool     `json:"completed" gorm:"default:'false'"`
-	Users     []*User  `gorm:"many2many:user_tasks;" json:"-"`
+	Users     []*User  `gorm:"many2many:user_tasks;" json:"users,omitempty"`
 }
 
-func (t *Task) Complete() {
-	t.Completed = true
-}
-
-func (t *Task) Undo() {
-	t.Completed = false
+type UpdateTask struct {
+	Priority  string `json:"priority" validate:"omitempty,oneof=1 2 3"`
+	Completed bool   `json:"completed" validate:"omitempty"`
 }

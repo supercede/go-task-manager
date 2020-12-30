@@ -47,7 +47,7 @@ func (h *Handler) Signup(w http.ResponseWriter, r *http.Request) {
 		RespondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	res := Response{"Sign up successful", user.ReturnUser()}
+	res := Response{"success", "Sign up successful", user}
 	RespondJSON(w, http.StatusCreated, &res)
 }
 
@@ -92,12 +92,12 @@ func (h *Handler) Signin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := map[string]interface{}{
-		"user":          user.ReturnUser(),
+		"user":          user,
 		"access_token":  tokens.AccessToken,
 		"refresh_token": tokens.RefreshToken,
 	}
 
-	res := Response{"Sign in successful", data}
+	res := Response{"success", "Sign in successful", data}
 	RespondJSON(w, http.StatusOK, &res)
 }
 
@@ -116,7 +116,7 @@ func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	res := Response{"Logout successful", nil}
+	res := Response{"success", "Logout successful", nil}
 	RespondJSON(w, http.StatusOK, &res)
 }
 
@@ -208,7 +208,7 @@ func (h *Handler) Refresh(w http.ResponseWriter, r *http.Request) {
 			"access_token":  ts.AccessToken,
 			"refresh_token": ts.RefreshToken,
 		}
-		res := Response{"Tokens created sucessfully", tokens}
+		res := Response{"success", "Tokens created sucessfully", tokens}
 		RespondJSON(w, http.StatusOK, &res)
 		return
 	} else {

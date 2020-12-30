@@ -77,9 +77,9 @@ func (s *Store) CreateTask(u *models.User, t models.Task) (*models.Task, error) 
 	return &t, nil
 }
 
-func (s *Store) GetTasks(u *models.User) (*[]models.Task, error) {
+func (s *Store) GetTasks(u *models.User, params map[string]interface{}) (*[]models.Task, error) {
 	var tasks []models.Task
-	if err := s.DB.Model(u).Association("Tasks").Find(&tasks).Error; err != nil {
+	if err := s.DB.Where(params).Model(u).Association("Tasks").Find(&tasks).Error; err != nil {
 		return nil, err
 	}
 	return &tasks, nil
@@ -87,8 +87,64 @@ func (s *Store) GetTasks(u *models.User) (*[]models.Task, error) {
 
 func (s *Store) GetTask(u *models.User, id int) (*models.Task, error) {
 	var task models.Task
-	if err := s.DB.Model(u).Where("ID = ?", id).Association("Tasks").Find(&task).Error; err != nil {
+	if err := s.DB.Model(u).Preload("Users").Where("ID = ?", id).Association("Tasks").Find(&task).Error; err != nil {
 		return nil, err
 	}
 	return &task, nil
+}
+
+func (s *Store) AddUserToTask(u *models.User, t models.Task, idUser, idTask int) (*models.User, error) {
+	if err := s.DB.First(u, idUser).Error; err != nil {
+		return nil, err
+	}
+	if err := s.DB.First(&t, idTask).Error; err != nil {
+		return nil, err
+	}
+
+	if err := s.DB.Model(&t).Association("Users").Append(u).Error; err != nil {
+		return nil, err
+	}
+
+	return u, nil
+}
+
+func (s *Store) RemoveUserFromTask(u *models.User, t models.Task, idUser, idTask int) error {
+	if err := s.DB.First(u, idUser).Error; err != nil {
+		return err
+	}
+	if err := s.DB.First(&t, idTask).Error; err != nil {
+		return err
+	}
+
+	if err := s.DB.Model(&t).Association("Users").Delete(u).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *Store) UpdateTask(u *models.User, t models.UpdateTask, idTask int) (*models.Task, error) {
+	var task models.Task
+	if err := s.DB.Model(u).Where("ID = ?", idTask).Association("Tasks").Find(&task).Error; err != nil {
+		return nil, err
+	}
+
+	if err := s.DB.Model(&task).Update(t).Error; err != nil {
+		return nil, err
+	}
+
+	return &task, nil
+}
+
+func (s *Store) DeleteTask(u *models.User, idTask int) error {
+	var task models.Task
+	if err := s.DB.Model(u).Where("ID = ?", idTask).Association("Tasks").Find(&task).Error; err != nil {
+		return err
+	}
+
+	if err := s.DB.Delete(task).Error; err != nil {
+		return err
+	}
+
+	return nil
 }
