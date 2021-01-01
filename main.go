@@ -1,7 +1,11 @@
 package main
 
 import (
+	"context"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 	"todo-app/database"
 	"todo-app/handlers"
@@ -44,6 +48,9 @@ func main() {
 		log.Fatalf("Failed to read config: %v", err)
 	}
 
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+
 	redisClient, err := NewRedisDB(conf.RedisHost, conf.RedisPort, conf.RedisPassword)
 	if err != nil {
 		log.Fatalf("Failed to create redis store: %v", err)
@@ -64,11 +71,11 @@ func main() {
 	serveMux.HandleFunc("/signin", handler.Signin).Methods("POST")
 	serveMux.HandleFunc("/logout", handler.Logout).Methods("GET", "POST")
 	serveMux.HandleFunc("/tokens", handler.Refresh).Methods("POST")
+	serveMux.HandleFunc("/ws", handler.WSEndpoint)
 
 	tasksRouter := serveMux.PathPrefix("/tasks").Subrouter()
 	tasksRouter.Use(middleware.AuthMiddleware)
 	tasksRouter.HandleFunc("", handler.CreateTask).Methods("POST")
-	// GorillaMux doesn't handle query params well, I know
 	tasksRouter.HandleFunc("", handler.GetTasks).Queries("completed", "{completed:true|false}").Methods("GET")
 	tasksRouter.HandleFunc("", handler.GetTasks).Queries("priority", "{priority:[1-3]}").Methods("GET")
 	tasksRouter.HandleFunc("", handler.GetTasks).Methods("GET")
@@ -84,7 +91,15 @@ func main() {
 		WriteTimeout: 2 * time.Second,
 	}
 
-	log.Fatal(s.ListenAndServe())
+	go func() {
+		log.Fatal(s.ListenAndServe())
+	}()
+
+	sig := <-sigs
+	log.Warningf("Received signal %s, Terminating gracefully", sig)
+	tc, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	s.Shutdown(tc)
 }
 
 func getConfig() (util.EnvVariables, error) {
