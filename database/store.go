@@ -93,34 +93,34 @@ func (s *Store) GetTask(u *models.User, id int) (*models.Task, error) {
 	return &task, nil
 }
 
-func (s *Store) AddUserToTask(u *models.User, t models.Task, idUser, idTask int) (*models.User, error) {
+func (s *Store) AddUserToTask(u *models.User, t models.Task, idUser, idTask int) (*models.User, *models.Task, error) {
 	if err := s.DB.First(u, idUser).Error; err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if err := s.DB.First(&t, idTask).Error; err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	if err := s.DB.Model(&t).Association("Users").Append(u).Error; err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	return u, nil
+	return u, &t, nil
 }
 
-func (s *Store) RemoveUserFromTask(u *models.User, t models.Task, idUser, idTask int) error {
+func (s *Store) RemoveUserFromTask(u *models.User, t models.Task, idUser, idTask int) (*models.User, *models.Task, error) {
 	if err := s.DB.First(u, idUser).Error; err != nil {
-		return err
+		return nil, nil, err
 	}
 	if err := s.DB.First(&t, idTask).Error; err != nil {
-		return err
+		return nil, nil, err
 	}
 
 	if err := s.DB.Model(&t).Association("Users").Delete(u).Error; err != nil {
-		return err
+		return nil, nil, err
 	}
 
-	return nil
+	return u, &t, nil
 }
 
 func (s *Store) UpdateTask(u *models.User, t models.UpdateTask, idTask int) (*models.Task, error) {
@@ -136,15 +136,15 @@ func (s *Store) UpdateTask(u *models.User, t models.UpdateTask, idTask int) (*mo
 	return &task, nil
 }
 
-func (s *Store) DeleteTask(u *models.User, idTask int) error {
+func (s *Store) DeleteTask(u *models.User, idTask int) (*models.Task, error) {
 	var task models.Task
 	if err := s.DB.Model(u).Where("ID = ?", idTask).Association("Tasks").Find(&task).Error; err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := s.DB.Delete(task).Error; err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &task, nil
 }

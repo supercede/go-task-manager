@@ -85,6 +85,8 @@ func main() {
 	tasksRouter.HandleFunc("/{idTask:[0-9]+}/{idUser:[0-9]+}", handler.AddUserToTask).Methods(http.MethodPost)
 	tasksRouter.HandleFunc("/{idTask:[0-9]+}/{idUser:[0-9]+}", handler.RemoveUserFromTask).Methods(http.MethodDelete)
 
+	go handlers.Reader()
+
 	s := &http.Server{
 		Addr:         ":8080",
 		Handler:      serveMux,

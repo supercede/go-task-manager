@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 	"todo-app/handlers"
 	"todo-app/util/auth"
@@ -13,10 +14,9 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		err := auth.CheckTokenValidity(r)
 		if err != nil {
 			log.Warning(err)
-			handlers.RespondError(w, http.StatusUnauthorized, "Unauthorized")
+			handlers.RespondError(w, http.StatusUnauthorized, fmt.Sprint("Unauthorized:", err))
 			return
 		}
-
 		next.ServeHTTP(w, r)
 	})
 }
